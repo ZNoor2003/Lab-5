@@ -1,0 +1,177 @@
+#include <stdio.h>
+#include <string.h>
+
+struct Student {
+    int roll_no;
+    char name[50];
+    float cgpa;
+};
+
+void addStudent(FILE *file) {
+    struct Student newStudent;
+    printf("Enter student roll no: ");
+    scanf("%d", &newStudent.roll_no);
+    printf("Enter student name: ");
+    scanf("%s", newStudent.name);
+    printf("Enter student cgpa: ");
+    scanf("%f", &newStudent.cgpa);
+    fprintf(file, "%d %s %.2f\n", newStudent.roll_no, newStudent.name, newStudent.cgpa);
+    printf("Student added successfully.\n");
+}
+
+void displayStudents(FILE *file) {
+    struct Student student;
+    while (fscanf(file, "%d %s %f", &student.roll_no, student.name, &student.cgpa) == 3) {
+        printf("Roll No: %d, Name: %s, CGPA: %.2f\n", student.roll_no, student.name, student.cgpa);
+    }
+}
+
+void modify(FILE *file) {
+    struct Student student;
+    printf("Enter student roll no: ");
+    int roll;
+    scanf("%d", &roll);
+    while (fread(&student, sizeof(struct Student), 1, file) == 1) {
+        if (student.roll_no == roll) {
+            printf("Enter modified name: ");
+            scanf("%s", student.name);
+            printf("Enter modified roll no: ");
+            scanf("%d", &student.roll_no);
+            printf("Enter modified cgpa: ");
+            scanf("%f", &student.cgpa);
+            fseek(file, -sizeof(struct Student), SEEK_CUR);
+            fwrite(&student, sizeof(struct Student), 1, file);
+        }
+    }
+}
+
+void delete(FILE *file) {
+    struct Student student;
+    FILE *tempFile = fopen("temp.dat", "w+");
+    fseek(file, 0, SEEK_SET);
+    printf("Enter student roll no: ");
+    int roll;
+    scanf("%d", &roll);
+    while (fread(&student, sizeof(struct Student), 1, file) == 1) {
+        if (student.roll_no != roll) {
+            fwrite(&student, sizeof(struct Student), 1, tempFile);
+        }
+    }
+    fclose(file);
+    fclose(tempFile);
+    remove("student_database.txt");
+    rename("temp.dat", "student_database.txt");
+}
+
+//exercise 1
+int main() {
+    FILE *fptr;
+    fptr = fopen("lab5.txt", "w");
+    fprintf(fptr, "%s\n", "hello world");
+    fclose(fptr);
+    fptr = fopen("lab5.txt", "a");
+    if (fptr == NULL) {
+        printf("Error opening the file in append mode.\n");
+        return 1;
+    }
+    char str[50] = "this is labwork6\n";
+    fputs(str, fptr);
+    fclose(fptr);
+
+    fptr = fopen("lab5.txt", "r");
+    char data[50];
+    while (fgets(data, 50, fptr) != NULL) {
+        printf("%s", data);
+    }
+    fclose(fptr);
+
+    return 0;
+}
+
+
+//exercise 2
+//exercise2 
+#include <stdio.h>
+
+int main() {
+    FILE *fptr;
+    fptr = fopen("lab5.txt", "r");
+    if (fptr == NULL) {
+        printf("Error opening the file.\n");
+        return 1;
+    }
+
+    char word;
+    int count = 0;
+    int inWord = 0; // Flag to indicate whether we are inside a word
+
+    while ((word = fgetc(fptr)) != EOF) {
+        if (word == '\n' || word == ' ' || word == '\t') {
+            // If we were inside a word, increment the count
+            if (inWord) {
+                count += 1;
+                inWord = 0; // Reset the flag
+            }
+        } else {
+            // We are inside a word
+            inWord = 1;
+        }
+    }
+
+    // If the file doesn't end with a space or newline, consider the last word
+    if (inWord) {
+        count += 1;
+    }
+
+    printf("Number of words: %d\n", count);
+
+    fclose(fptr);
+    return 0;
+}
+
+//exercise 3
+int main() {
+    FILE *file;
+    int choice;
+
+    do {
+        printf("\nStudent Database System\n");
+        printf("1. Add Student\n");
+        printf("2. Display Students\n");
+        printf("3. Modify Student\n");
+        printf("4. Delete Student\n");
+        printf("5. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                file = fopen("student_database.txt", "a");
+                addStudent(file);
+                fclose(file);
+                break;
+            case 2:
+                file = fopen("student_database.txt", "r");
+                displayStudents(file);
+                fclose(file);
+                break;
+            case 3:
+                file = fopen("student_database.txt", "r+");
+                modify(file);
+                fclose(file);
+                break;
+            case 4:
+                file = fopen("student_database.txt", "r+");
+                delete(file);
+                fclose(file);
+                break;
+            case 5:
+                printf("Exiting the program.\n");
+                break;
+            default:
+                printf("Invalid choice. Please try again.\n");
+        }
+    } while (choice != 5);
+
+    return 0;
+}
